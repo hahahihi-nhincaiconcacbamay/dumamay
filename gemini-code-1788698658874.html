@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>F1 Racing Game - Biến Ngẫu Nhiên Rời Rạc</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #1a1a1a;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #e10600; /* F1 Red */
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            text-align: center;
+        }
+
+        /* Sound Control Button */
+        .sound-btn {
+            background-color: #25d366;
+            color: #fff;
+            border: none;
+            padding: 8px 16px;
+            font-size: 0.95rem;
+            font-weight: bold;
+            border-radius: 20px;
+            cursor: pointer;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            transition: transform 0.1s, background 0.2s;
+        }
+
+        .sound-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .sound-btn.muted {
+            background-color: #777;
+        }
+
+        /* Track Container */
+        .track-container {
+            width: 100%;
+            max-width: 900px;
+            height: 180px;
+            background-color: #333;
+            border-top: 4px solid #fff;
+            border-bottom: 4px solid #fff;
+            position: relative;
+            overflow: hidden;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+        }
+
+        /* Road Marking */
+        .lane-mark {
+            position: absolute;
+            top: 50%;
+            width: 100%;
+            height: 4px;
+            border-top: 4px dashed #e5c100;
+        }
+
+        /* Start Line */
+        .start-line {
+            position: absolute;
+            left: 20px;
+            top: 0;
+            width: 15px;
+            height: 100%;
+            background: repeating-linear-gradient(0deg, #fff, #fff 10px, #000 10px, #000 20px);
+            opacity: 0.6;
+        }
+
+        /* Finish Line (Right side) */
+        .finish-line {
+            position: absolute;
+            right: 20px;
+            top: 0;
+            width: 30px;
+            height: 100%;
+            background: repeating-conic-gradient(#000 0% 25%, #fff 0% 50%) 50% / 15px 15px;
+            border-left: 2px solid #fff;
+        }
+
+        /* Flip car emoji so it faces RIGHT */
+        .car-flip {
+            transform: scaleX(-1);
+            display: inline-block;
+        }
+
+        /* Player F1 Car */
+        .f1-car {
+            position: absolute;
+            left: 40px;
+            top: 65px;
+            font-size: 45px;
+            transition: left 1s cubic-bezier(0.25, 1, 0.5, 1);
+            z-index: 10;
+            filter: drop-shadow(-2px 4px 6px rgba(0,0,0,0.6));
+        }
+
+        /* Opponents */
+        .opponent {
+            position: absolute;
+            font-size: 35px;
+            opacity: 0.7;
+            transition: all 0.5s ease;
+        }
+
+        /* Centered Flag & Meme Pop Effect */
+        .flag-pop {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: none;
+            z-index: 30;
+            text-align: center;
+            pointer-events: none;
+            width: 90%;
+        }
+
+        .flag-pop.active {
+            display: block;
+            animation: centerPopUp 3s ease-in-out forwards;
+        }
+
+        .flag-text {
+            background: rgba(225, 6, 0, 0.95);
+            color: #fff;
+            font-weight: 900;
+            font-style: italic;
+            padding: 14px 28px;
+            border-radius: 30px;
+            border: 3px solid #fff;
+            font-size: 1.4rem;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.8);
+            display: inline-block;
+            letter-spacing: 1px;
+        }
+
+        @keyframes centerPopUp {
+            0% { transform: translate(-50%, -50%) scale(0.2); opacity: 0; }
+            15% { transform: translate(-50%, -50%) scale(1.15); opacity: 1; }
+            80% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(0.8); opacity: 0; }
+        }
+
+        /* Quiz Box */
+        .quiz-container {
+            width: 100%;
+            max-width: 900px;
+            background: #2b2b2b;
+            padding: 25px;
+            border-radius: 12px;
+            border-left: 6px solid #e10600;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.4);
+        }
+
+        .question-title {
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            color: #f1f1f1;
+            line-height: 1.5;
+        }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .btn-option {
+            background-color: #3d3d3d;
+            color: #fff;
+            border: 2px solid #555;
+            padding: 14px 20px;
+            font-size: 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: left;
+            transition: all 0.2s ease;
+        }
+
+        .btn-option:hover {
+            background-color: #4a4a4a;
+            border-color: #888;
+        }
+
+        .btn-option.correct {
+            background-color: #2e7d32 !important;
+            border-color: #4caf50 !important;
+        }
+
+        .btn-option.wrong {
+            background-color: #c62828 !important;
+            border-color: #ef5350 !important;
+        }
+
+        /* Result Screen */
+        .result-screen {
+            display: none;
+            text-align: center;
+            padding: 30px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .result-screen h2 {
+            color: #4caf50;
+            font-size: 2.2rem;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+        }
+
+        .meme-center-text {
+            color: #ffeb3b;
+            font-size: 1.5rem;
+            font-weight: 900;
+            font-style: italic;
+            margin: 15px 0;
+            text-shadow: 2px 2px 8px rgba(225, 6, 0, 0.8);
+            letter-spacing: 1px;
+        }
+
+        .class-text {
+            color: #ffffff;
+            font-size: 1.3rem;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        .btn-restart {
+            margin-top: 10px;
+            padding: 12px 30px;
+            background-color: #e10600;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-restart:hover {
+            background-color: #b30500;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>🏎️ Game Đua Xe F1: Bứt Phá Tốc Độ 🏁</h1>
+    
+    <!-- Sound Toggle -->
+    <button id="toggleSoundBtn" class="sound-btn" onclick="toggleSound()">🔊 Nhạc & Âm Thanh: BẬT</button>
+
+    <!-- Track Container -->
+    <div class="track-container">
+        <div class="lane-mark"></div>
+        <div class="start-line"></div>
+        <div class="finish-line"></div>
+        
+        <!-- Player -->
+        <div id="playerCar" class="f1-car"><span class="car-flip">🏎️</span></div>
+        
+        <!-- Centered Effect Flag & Dynamic Text -->
+        <div id="flagPop" class="flag-pop">
+            <span id="flagText" class="flag-text">🏁 TU TU TU TÚT MAX VERSTAPPEN! 🐂🇳🇱</span>
+        </div>
+
+        <!-- Opponents -->
+        <div class="opponent" style="left: 180px; top: 15px;"><span class="car-flip">🏎️</span></div>
+        <div class="opponent" style="left: 320px; top: 110px;"><span class="car-flip">🏎️</span></div>
+        <div class="opponent" style="left: 460px; top: 15px;"><span class="car-flip">🏎️</span></div>
+        <div class="opponent" style="left: 600px; top: 110px;"><span class="car-flip">🏎️</span></div>
+        <div class="opponent" style="left: 740px; top: 15px;"><span class="car-flip">🏎️</span></div>
+    </div>
+
+    <!-- Quiz Panel -->
+    <div class="quiz-container" id="quizBox">
+        <div id="question" class="question-title">Đang tải câu hỏi...</div>
+        <div id="options" class="options-grid"></div>
+    </div>
+
+    <!-- Result Panel -->
+    <div class="quiz-container result-screen" id="resultBox" style="display: none;">
+        <h2>🏆 CHÚC MỪNG VỀ ĐÍCH! 🏆</h2>
+        <div class="meme-center-text">🎶 TỔNG DUYỆT CÁC TAY ĐUA F1 XUẤT SẮC! 🏎️💨</div>
+        <p class="class-text">Xe F1 của tập thể lớp <strong>12A16</strong> đã xuất sắc giành cúp vô địch!</p>
+        <button class="btn-restart" onclick="restartGame()">Chơi Lại</button>
+    </div>
+
+    <script>
+        const questions = [
+            {
+                q: "Câu 1: Một biến ngẫu nhiên X được gọi là biến ngẫu nhiên rời rạc khi nào?",
+                options: [
+                    "A. Tập hợp các giá trị có thể có của X là vô hạn không đếm được",
+                    "B. Tập hợp các giá trị có thể có của X là hữu hạn (hoặc đếm được)",
+                    "C. X chỉ nhận các giá trị âm",
+                    "D. X nhận mọi giá trị trên một khoảng số thực"
+                ],
+                correct: 1,
+                cheerText: "🎶 TU TU TU TÚT MAX VERSTAPPEN! 🐂🇳🇱",
+                // Câu đọc ngắt nhịp vần điệu chuẩn F1
+                speakText: "Tu, tu, tu, tut... Max, Ver-stap-pen!",
+                lang: "en-US",
+                pitch: 1.4,
+                rate: 1.0
+            },
+            {
+                q: "Câu 2: Tổng các xác suất P(X = xi) trong một bảng phân bố xác suất của biến ngẫu nhiên rời rạc X luôn luôn bằng bao nhiêu?",
+                options: [
+                    "A. 0",
+                    "B. 0.5",
+                    "C. 1",
+                    "D. 100"
+                ],
+                correct: 2,
+                cheerText: "🏁 LEWIS LEWIS LEWIS, HAMILTON! 🐐🇬🇧",
+                speakText: "Lewis, Lewis, Lewis... Ham-il-ton!",
+                lang: "en-GB",
+                pitch: 1.2,
+                rate: 1.1
+            },
+            {
+                q: "Câu 3: Kỳ vọng E(X) (giá trị trung bình) của biến ngẫu nhiên rời rạc X phản ánh điều gì?",
+                options: [
+                    "A. Giá trị lớn nhất mà X có thể đạt được",
+                    "B. Giá trị trung bình theo lý thuyết mà X nhận được qua nhiều lần thử",
+                    "C. Độ rủi ro/độ sai lệch của dữ liệu",
+                    "D. Xác suất xảy ra sự kiện chắc chắn"
+                ],
+                correct: 1,
+                cheerText: "🏁 CHARLES, CHARLES CHARLES LECLERC! 🇲🇨👑",
+                speakText: "Charles, Charles... Charles Le-clerc!",
+                lang: "fr-FR",
+                pitch: 1.3,
+                rate: 1.0
+            },
+            {
+                q: "Câu 4: Phương sai V(X) và Độ lệch chuẩn σ(X) dùng để đo lường đại lượng nào?",
+                options: [
+                    "A. Độ biến động (độ rủi ro/độ sai lệch) xung quanh giá trị kỳ vọng",
+                    "B. Giá trị nhỏ nhất của biến ngẫu nhiên",
+                    "C. Tổng xác suất của tất cả các biến cố",
+                    "D. Số lượng biến cố có thể xảy ra"
+                ],
+                correct: 0,
+                cheerText: "🏁 FER, FERNANDO ALONSO! 🇪🇸⚔️",
+                speakText: "Fer... Fer-nan-do... A-lon-so!",
+                lang: "es-ES",
+                pitch: 1.2,
+                rate: 0.95
+            },
+            {
+                q: "Câu 5: Gieo 1 đồng xu cân đối 1 lần. Gọi X là số mặt ngửa xuất hiện (X nhận giá trị 0 hoặc 1). Xác suất P(X = 1) là bao nhiêu?",
+                options: [
+                    "A. 0",
+                    "B. 0.25",
+                    "C. 0.5",
+                    "D. 1"
+                ],
+                correct: 2,
+                cheerText: "🏁 KIMI KIMI ANTONELLI LA LA LA LA! 🇮🇹🏎️",
+                speakText: "Kimi, Kimi, An-to-nel-li... la, la, la, la!",
+                lang: "it-IT",
+                pitch: 1.35,
+                rate: 1.15
+            }
+        ];
+
+        let currentQ = 0;
+        let isSoundEnabled = true;
+        const positions = [40, 240, 380, 520, 660, 800];
+
+        const questionEl = document.getElementById("question");
+        const optionsEl = document.getElementById("options");
+        const playerCar = document.getElementById("playerCar");
+        const flagPop = document.getElementById("flagPop");
+        const flagText = document.getElementById("flagText");
+        const quizBox = document.getElementById("quizBox");
+        const resultBox = document.getElementById("resultBox");
+        const toggleSoundBtn = document.getElementById("toggleSoundBtn");
+
+        function toggleSound() {
+            isSoundEnabled = !isSoundEnabled;
+            if (isSoundEnabled) {
+                toggleSoundBtn.textContent = "🔊 Nhạc & Âm Thanh: BẬT";
+                toggleSoundBtn.classList.remove("muted");
+            } else {
+                toggleSoundBtn.textContent = "🔇 Nhạc & Âm Thanh: TẮT";
+                toggleSoundBtn.classList.add("muted");
+                window.speechSynthesis.cancel();
+            }
+        }
+
+        // Tạo tiếng còi động cơ F1 phóng đi
+        function playEngineSound() {
+            if (!isSoundEnabled) return;
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(150, ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(800, ctx.currentTime + 0.4);
+                osc.frequency.exponentialRampToValueAtTime(300, ctx.currentTime + 0.8);
+                
+                gain.gain.setValueAtTime(0.3, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.8);
+                
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                
+                osc.start();
+                osc.stop(ctx.currentTime + 0.8);
+            } catch (e) {
+                console.log(e);
+            }
+        }
+
+        // Đọc vần điệu tên tay đua F1
+        function speakRhythmText(obj) {
+            if (!isSoundEnabled) return;
+            window.speechSynthesis.cancel();
+            
+            const utterance = new SpeechSynthesisUtterance(obj.speakText);
+            utterance.lang = obj.lang;
+            utterance.pitch = obj.pitch || 1.2;
+            utterance.rate = obj.rate || 1.0;
+            
+            window.speechSynthesis.speak(utterance);
+        }
+
+        function loadQuestion() {
+            const q = questions[currentQ];
+            questionEl.textContent = q.q;
+            optionsEl.innerHTML = "";
+
+            q.options.forEach((opt, idx) => {
+                const btn = document.createElement("button");
+                btn.className = "btn-option";
+                btn.textContent = opt;
+                btn.onclick = () => checkAnswer(idx, btn);
+                optionsEl.appendChild(btn);
+            });
+        }
+
+        function checkAnswer(selectedIdx, btn) {
+            const currentObj = questions[currentQ];
+            const correctIdx = currentObj.correct;
+            const allBtns = optionsEl.querySelectorAll(".btn-option");
+
+            if (selectedIdx === correctIdx) {
+                allBtns.forEach(b => b.style.pointerEvents = "none");
+
+                btn.classList.add("correct");
+                flagText.textContent = currentObj.cheerText;
+
+                // 1. Tiếng động cơ F1
+                playEngineSound();
+
+                // 2. Đọc giai điệu / vần tên tay đua
+                speakRhythmText(currentObj);
+
+                currentQ++;
+                playerCar.style.left = positions[currentQ] + "px";
+                
+                setTimeout(() => {
+                    flagPop.classList.remove("active");
+                    void flagPop.offsetWidth;
+                    flagPop.classList.add("active");
+                }, 200);
+
+                setTimeout(() => {
+                    flagPop.classList.remove("active");
+                    if (currentQ < questions.length) {
+                        loadQuestion();
+                    } else {
+                        quizBox.style.display = "none";
+                        resultBox.style.display = "flex";
+                    }
+                }, 3000);
+
+            } else {
+                btn.classList.add("wrong");
+                btn.style.pointerEvents = "none";
+            }
+        }
+
+        function restartGame() {
+            currentQ = 0;
+            playerCar.style.left = positions[0] + "px";
+            resultBox.style.display = "none";
+            quizBox.style.display = "block";
+            loadQuestion();
+        }
+
+        loadQuestion();
+    </script>
+</body>
+</html>
