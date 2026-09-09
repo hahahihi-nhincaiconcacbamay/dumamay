@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>F1 Racing Game - Biến Ngẫu Nhiên Rời Rạc</title>
+    <title>F1 Racing 1v1 - Biến Ngẫu Nhiên Rời Rạc</title>
     <style>
         * {
             box-sizing: border-box;
@@ -54,11 +54,11 @@
             background-color: #777;
         }
 
-        /* Track Container */
+        /* Track Container - 2 Lanes */
         .track-container {
             width: 100%;
             max-width: 900px;
-            height: 180px;
+            height: 200px;
             background-color: #333;
             border-top: 4px solid #fff;
             border-bottom: 4px solid #fff;
@@ -69,7 +69,7 @@
             box-shadow: 0 10px 20px rgba(0,0,0,0.5);
         }
 
-        /* Road Marking */
+        /* Lane Separator */
         .lane-mark {
             position: absolute;
             top: 50%;
@@ -89,7 +89,7 @@
             opacity: 0.6;
         }
 
-        /* Finish Line (Right side) */
+        /* Finish Line */
         .finish-line {
             position: absolute;
             right: 20px;
@@ -106,23 +106,76 @@
             display: inline-block;
         }
 
-        /* Player F1 Car */
+        /* F1 Cars Base Style */
         .f1-car {
             position: absolute;
             left: 40px;
-            top: 65px;
-            font-size: 45px;
-            transition: left 1s cubic-bezier(0.25, 1, 0.5, 1);
+            font-size: 42px;
+            transition: left 0.8s cubic-bezier(0.25, 1, 0.5, 1);
             z-index: 10;
             filter: drop-shadow(-2px 4px 6px rgba(0,0,0,0.6));
+            display: flex;
+            align-items: center;
         }
 
-        /* Opponents */
-        .opponent {
+        /* Player Car Lane (Top) */
+        #playerCar {
+            top: 20px;
+        }
+
+        /* Opponent Car Lane (Bottom) */
+        #opponentCar {
+            top: 115px;
+        }
+
+        /* "BẠN" Indicator Label */
+        .you-label {
             position: absolute;
-            font-size: 35px;
-            opacity: 0.7;
-            transition: all 0.5s ease;
+            top: -24px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #25d366;
+            color: #000;
+            font-size: 0.75rem;
+            font-weight: 900;
+            padding: 2px 8px;
+            border-radius: 10px;
+            white-space: nowrap;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+            animation: bounce 1s infinite alternate;
+        }
+
+        .you-label::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-width: 5px 5px 0;
+            border-style: solid;
+            border-color: #25d366 transparent;
+            display: block;
+            width: 0;
+        }
+
+        /* Opponent Label */
+        .opponent-label {
+            position: absolute;
+            top: -22px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #e10600;
+            color: #fff;
+            font-size: 0.7rem;
+            font-weight: 800;
+            padding: 2px 6px;
+            border-radius: 8px;
+            white-space: nowrap;
+        }
+
+        @keyframes bounce {
+            0% { transform: translateX(-50%) translateY(0); }
+            100% { transform: translateX(-50%) translateY(-4px); }
         }
 
         /* Centered Flag & Meme Pop Effect */
@@ -140,7 +193,7 @@
 
         .flag-pop.active {
             display: block;
-            animation: centerPopUp 3s ease-in-out forwards;
+            animation: centerPopUp 2.5s ease-in-out forwards;
         }
 
         .flag-text {
@@ -155,6 +208,12 @@
             box-shadow: 0 6px 20px rgba(0,0,0,0.8);
             display: inline-block;
             letter-spacing: 1px;
+        }
+
+        .flag-text.wrong-pop {
+            background: rgba(180, 0, 0, 0.95) !important;
+            border-color: #ffeb3b !important;
+            color: #fff !important;
         }
 
         @keyframes centerPopUp {
@@ -227,11 +286,13 @@
         }
 
         .result-screen h2 {
-            color: #4caf50;
             font-size: 2.2rem;
             margin-bottom: 15px;
             text-transform: uppercase;
         }
+
+        .win-title { color: #4caf50; }
+        .lose-title { color: #e10600; }
 
         .meme-center-text {
             color: #ffeb3b;
@@ -270,7 +331,7 @@
 </head>
 <body>
 
-    <h1>🏎️ Game Đua Xe F1: Bứt Phá Tốc Độ 🏁</h1>
+    <h1>🏎️ F1 RACING 1V1: ĐỐI KHÁNG TỐC ĐỘ 🏁</h1>
     
     <!-- Sound Toggle -->
     <button id="toggleSoundBtn" class="sound-btn" onclick="toggleSound()">🔊 Nhạc & Âm Thanh: BẬT</button>
@@ -281,20 +342,22 @@
         <div class="start-line"></div>
         <div class="finish-line"></div>
         
-        <!-- Player -->
-        <div id="playerCar" class="f1-car"><span class="car-flip">🏎️</span></div>
+        <!-- Player Car (Top Lane) -->
+        <div id="playerCar" class="f1-car">
+            <span class="you-label">⬇️ BẠN</span>
+            <span class="car-flip">🏎️</span>
+        </div>
+
+        <!-- Opponent Car (Bottom Lane) -->
+        <div id="opponentCar" class="f1-car">
+            <span class="opponent-label">ĐỐI THỦ</span>
+            <span class="car-flip">🏎️</span>
+        </div>
         
         <!-- Centered Effect Flag & Dynamic Text -->
         <div id="flagPop" class="flag-pop">
             <span id="flagText" class="flag-text">🏁 TU TU TU TÚT MAX VERSTAPPEN! 🐂🇳🇱</span>
         </div>
-
-        <!-- Opponents -->
-        <div class="opponent" style="left: 180px; top: 15px;"><span class="car-flip">🏎️</span></div>
-        <div class="opponent" style="left: 320px; top: 110px;"><span class="car-flip">🏎️</span></div>
-        <div class="opponent" style="left: 460px; top: 15px;"><span class="car-flip">🏎️</span></div>
-        <div class="opponent" style="left: 600px; top: 110px;"><span class="car-flip">🏎️</span></div>
-        <div class="opponent" style="left: 740px; top: 15px;"><span class="car-flip">🏎️</span></div>
     </div>
 
     <!-- Quiz Panel -->
@@ -305,9 +368,9 @@
 
     <!-- Result Panel -->
     <div class="quiz-container result-screen" id="resultBox" style="display: none;">
-        <h2>🏆 CHÚC MỪNG VỀ ĐÍCH! 🏆</h2>
-        <div class="meme-center-text">🎶 TỔNG DUYỆT CÁC TAY ĐUA F1 XUẤT SẮC! 🏎️💨</div>
-        <p class="class-text">Xe F1 của tập thể lớp <strong>12A16</strong> đã xuất sắc giành cúp vô địch!</p>
+        <h2 id="resultTitle" class="win-title">🏆 CHÚC MỪNG VỀ ĐÍCH! 🏆</h2>
+        <div class="meme-center-text" id="resultMemeText">🎶 TỔNG DUYỆT CÁC TAY ĐUA F1 XUẤT SẮC! 🏎️💨</div>
+        <p class="class-text" id="resultDesc">Xe F1 của tập thể lớp <strong>12A16</strong> đã xuất sắc giành cúp vô địch!</p>
         <button class="btn-restart" onclick="restartGame()">Chơi Lại</button>
     </div>
 
@@ -322,12 +385,8 @@
                     "D. X nhận mọi giá trị trên một khoảng số thực"
                 ],
                 correct: 1,
-                cheerText: "🎶 TU TU TU TÚT MAX VERSTAPPEN! 🐂🇳🇱",
-                // Câu đọc ngắt nhịp vần điệu chuẩn F1
-                speakText: "Tu, tu, tu, tut... Max, Ver-stap-pen!",
-                lang: "en-US",
-                pitch: 1.4,
-                rate: 1.0
+                cheerText: "🏁 TU TU TU TÚT MAX VERSTAPPEN! 🐂🇳🇱",
+                speechText: "Tu tu tu tút Max Verstappen"
             },
             {
                 q: "Câu 2: Tổng các xác suất P(X = xi) trong một bảng phân bố xác suất của biến ngẫu nhiên rời rạc X luôn luôn bằng bao nhiêu?",
@@ -339,10 +398,7 @@
                 ],
                 correct: 2,
                 cheerText: "🏁 LEWIS LEWIS LEWIS, HAMILTON! 🐐🇬🇧",
-                speakText: "Lewis, Lewis, Lewis... Ham-il-ton!",
-                lang: "en-GB",
-                pitch: 1.2,
-                rate: 1.1
+                speechText: "Lewis Lewis Lewis, Hamilton"
             },
             {
                 q: "Câu 3: Kỳ vọng E(X) (giá trị trung bình) của biến ngẫu nhiên rời rạc X phản ánh điều gì?",
@@ -354,10 +410,7 @@
                 ],
                 correct: 1,
                 cheerText: "🏁 CHARLES, CHARLES CHARLES LECLERC! 🇲🇨👑",
-                speakText: "Charles, Charles... Charles Le-clerc!",
-                lang: "fr-FR",
-                pitch: 1.3,
-                rate: 1.0
+                speechText: "Charles, Charles Charles Leclerc"
             },
             {
                 q: "Câu 4: Phương sai V(X) và Độ lệch chuẩn σ(X) dùng để đo lường đại lượng nào?",
@@ -369,10 +422,7 @@
                 ],
                 correct: 0,
                 cheerText: "🏁 FER, FERNANDO ALONSO! 🇪🇸⚔️",
-                speakText: "Fer... Fer-nan-do... A-lon-so!",
-                lang: "es-ES",
-                pitch: 1.2,
-                rate: 0.95
+                speechText: "Fer, Fernando Alonso"
             },
             {
                 q: "Câu 5: Gieo 1 đồng xu cân đối 1 lần. Gọi X là số mặt ngửa xuất hiện (X nhận giá trị 0 hoặc 1). Xác suất P(X = 1) là bao nhiêu?",
@@ -384,20 +434,19 @@
                 ],
                 correct: 2,
                 cheerText: "🏁 KIMI KIMI ANTONELLI LA LA LA LA! 🇮🇹🏎️",
-                speakText: "Kimi, Kimi, An-to-nel-li... la, la, la, la!",
-                lang: "it-IT",
-                pitch: 1.35,
-                rate: 1.15
+                speechText: "Kimi Kimi Antonelli la la la la"
             }
         ];
 
         let currentQ = 0;
+        let playerPos = 40;
+        let opponentPos = 40;
         let isSoundEnabled = true;
-        const positions = [40, 240, 380, 520, 660, 800];
 
         const questionEl = document.getElementById("question");
         const optionsEl = document.getElementById("options");
         const playerCar = document.getElementById("playerCar");
+        const opponentCar = document.getElementById("opponentCar");
         const flagPop = document.getElementById("flagPop");
         const flagText = document.getElementById("flagText");
         const quizBox = document.getElementById("quizBox");
@@ -416,8 +465,8 @@
             }
         }
 
-        // Tạo tiếng còi động cơ F1 phóng đi
-        function playEngineSound() {
+        // Âm thanh xe F1 tăng tốc khi ĐÚNG
+        function playCorrectSound() {
             if (!isSoundEnabled) return;
             try {
                 const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -425,32 +474,70 @@
                 const gain = ctx.createGain();
                 
                 osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(150, ctx.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(800, ctx.currentTime + 0.4);
-                osc.frequency.exponentialRampToValueAtTime(300, ctx.currentTime + 0.8);
+                osc.frequency.setValueAtTime(200, ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(900, ctx.currentTime + 0.3);
+                osc.frequency.exponentialRampToValueAtTime(400, ctx.currentTime + 0.7);
                 
                 gain.gain.setValueAtTime(0.3, ctx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.8);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.7);
                 
                 osc.connect(gain);
                 gain.connect(ctx.destination);
                 
                 osc.start();
-                osc.stop(ctx.currentTime + 0.8);
+                osc.stop(ctx.currentTime + 0.7);
             } catch (e) {
                 console.log(e);
             }
         }
 
-        // Đọc vần điệu tên tay đua F1
-        function speakRhythmText(obj) {
+        // Âm thanh phanh rít lốp khi SAI
+        function playWrongSound() {
+            if (!isSoundEnabled) return;
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(800, ctx.currentTime);
+                osc.frequency.linearRampToValueAtTime(150, ctx.currentTime + 0.4);
+                
+                gain.gain.setValueAtTime(0.3, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+                
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                
+                osc.start();
+                osc.stop(ctx.currentTime + 0.4);
+            } catch (e) {
+                console.log(e);
+            }
+        }
+
+        // ĐỌC KHẨU HIỆU TAY ĐUA
+        function speakCheerText(text) {
             if (!isSoundEnabled) return;
             window.speechSynthesis.cancel();
             
-            const utterance = new SpeechSynthesisUtterance(obj.speakText);
-            utterance.lang = obj.lang;
-            utterance.pitch = obj.pitch || 1.2;
-            utterance.rate = obj.rate || 1.0;
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = "vi-VN";
+            utterance.pitch = 1.2;
+            utterance.rate = 1.0;
+            
+            window.speechSynthesis.speak(utterance);
+        }
+
+        // ĐỌC CẢNH BÁO KHI CHỌN SAI
+        function speakWrongVoice() {
+            if (!isSoundEnabled) return;
+            window.speechSynthesis.cancel();
+            
+            const utterance = new SpeechSynthesisUtterance("Đối thủ đã bứt phá vượt lên!");
+            utterance.lang = "vi-VN";
+            utterance.pitch = 1.1;
+            utterance.rate = 1.0;
             
             window.speechSynthesis.speak(utterance);
         }
@@ -474,46 +561,99 @@
             const correctIdx = currentObj.correct;
             const allBtns = optionsEl.querySelectorAll(".btn-option");
 
-            if (selectedIdx === correctIdx) {
-                allBtns.forEach(b => b.style.pointerEvents = "none");
+            // Khóa tất cả các nút tạm thời trong khi chờ hiệu ứng
+            allBtns.forEach(b => b.style.pointerEvents = "none");
 
+            if (selectedIdx === correctIdx) {
+                // CHỌN ĐÚNG ➔ Xe mình vượt lên ➔ CHUYỂN CÂU HỎI MỚI
                 btn.classList.add("correct");
+                
+                flagText.classList.remove("wrong-pop");
                 flagText.textContent = currentObj.cheerText;
 
-                // 1. Tiếng động cơ F1
-                playEngineSound();
+                playerPos += 140;
+                playerCar.style.left = playerPos + "px";
 
-                // 2. Đọc giai điệu / vần tên tay đua
-                speakRhythmText(currentObj);
+                playCorrectSound();
+                speakCheerText(currentObj.speechText);
 
-                currentQ++;
-                playerCar.style.left = positions[currentQ] + "px";
-                
+                // Hiện Pop-up
                 setTimeout(() => {
                     flagPop.classList.remove("active");
                     void flagPop.offsetWidth;
                     flagPop.classList.add("active");
-                }, 200);
+                }, 100);
 
+                // Chờ đọc xong -> Qua câu hỏi mới
                 setTimeout(() => {
                     flagPop.classList.remove("active");
+                    currentQ++;
                     if (currentQ < questions.length) {
                         loadQuestion();
                     } else {
-                        quizBox.style.display = "none";
-                        resultBox.style.display = "flex";
+                        finishGame();
                     }
-                }, 3000);
+                }, 2600);
 
             } else {
+                // CHỌN SAI ➔ Xe đối thủ tiến lên ➔ KHÔNG CHUYỂN CÂU HỎI (Cho chọn lại)
                 btn.classList.add("wrong");
-                btn.style.pointerEvents = "none";
+
+                flagText.classList.add("wrong-pop");
+                flagText.textContent = "⚠️ ĐỐI THỦ ĐÃ BỨT PHÁ VƯỢT LÊN! ⚠️";
+
+                opponentPos += 140;
+                opponentCar.style.left = opponentPos + "px";
+
+                playWrongSound();
+                speakWrongVoice();
+
+                // Hiện Pop-up
+                setTimeout(() => {
+                    flagPop.classList.remove("active");
+                    void flagPop.offsetWidth;
+                    flagPop.classList.add("active");
+                }, 100);
+
+                // Sau 2s mở lại các nút (trừ nút đã chọn sai) để chọn lại
+                setTimeout(() => {
+                    flagPop.classList.remove("active");
+                    allBtns.forEach(b => {
+                        if (!b.classList.contains("wrong")) {
+                            b.style.pointerEvents = "auto";
+                        }
+                    });
+                }, 2000);
+            }
+        }
+
+        function finishGame() {
+            quizBox.style.display = "none";
+            resultBox.style.display = "flex";
+
+            const resultTitle = document.getElementById("resultTitle");
+            const resultMemeText = document.getElementById("resultMemeText");
+            const resultDesc = document.getElementById("resultDesc");
+
+            if (playerPos >= opponentPos) {
+                resultTitle.className = "win-title";
+                resultTitle.textContent = "🏆 CHÚC MỪNG VỀ ĐÍCH VÔ ĐỊCH! 🏆";
+                resultMemeText.textContent = "🎶 BẠN ĐÃ CHIẾN THẮNG ĐỐI THỦ XUẤT SẮC! 🏎️💨";
+                resultDesc.innerHTML = "Xe F1 của tập thể lớp <strong>12A16</strong> đã xuất sắc đánh bại đối thủ!";
+            } else {
+                resultTitle.className = "lose-title";
+                resultTitle.textContent = "💔 ĐỐI THỦ ĐÃ VỀ ĐÍCH TRƯỚC! 💔";
+                resultMemeText.textContent = "⚠️ HÃY THỬ LẠI ĐỂ ĐÁNH BẠI ĐỐI THỦ! 🏎️💨";
+                resultDesc.innerHTML = "Tập thể lớp <strong>12A16</strong> cần cố gắng hơn ở lượt đua tiếp theo!";
             }
         }
 
         function restartGame() {
             currentQ = 0;
-            playerCar.style.left = positions[0] + "px";
+            playerPos = 40;
+            opponentPos = 40;
+            playerCar.style.left = playerPos + "px";
+            opponentCar.style.left = opponentPos + "px";
             resultBox.style.display = "none";
             quizBox.style.display = "block";
             loadQuestion();
